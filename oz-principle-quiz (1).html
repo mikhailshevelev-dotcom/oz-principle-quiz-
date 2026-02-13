@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест: Принцип Оз</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: #e0e0e0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .question-container {
+            display: none;
+        }
+
+        .question-container.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .question-number {
+            color: #667eea;
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .question-text {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .option {
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            position: relative;
+        }
+
+        .option:hover:not(.selected):not(.disabled) {
+            border-color: #667eea;
+            background: #f8f9ff;
+            transform: translateX(5px);
+        }
+
+        .option.selected {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .option.correct {
+            border-color: #4caf50;
+            background: #e8f5e9;
+            animation: correctPulse 0.6s ease;
+        }
+
+        .option.incorrect {
+            border-color: #f44336;
+            background: #ffebee;
+            animation: shake 0.5s ease;
+        }
+
+        .option.disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        @keyframes correctPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .option-icon {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5em;
+        }
+
+        .feedback {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 12px;
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .feedback.show {
+            display: block;
+        }
+
+        .feedback.correct {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+        }
+
+        .feedback.incorrect {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+        }
+
+        .feedback-title {
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .feedback.correct .feedback-title {
+            color: #2e7d32;
+        }
+
+        .feedback.incorrect .feedback-title {
+            color: #c62828;
+        }
+
+        .feedback-text {
+            line-height: 1.6;
+            color: #555;
+        }
+
+        .button-container {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .next-button {
+            padding: 15px 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            display: none;
+        }
+
+        .next-button.show {
+            display: inline-block;
+        }
+
+        .next-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .next-button:active {
+            transform: translateY(0);
+        }
+
+        .next-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .results {
+            display: none;
+            text-align: center;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .results h2 {
+            font-size: 2em;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .score {
+            font-size: 4em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 30px 0;
+        }
+
+        .score-message {
+            font-size: 1.3em;
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .restart-button {
+            padding: 15px 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .restart-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .warning {
+            color: #f44336;
+            font-size: 0.9em;
+            margin-top: 10px;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .warning.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 Принцип Оз</h1>
+            <p>Тест на понимание концепций книги</p>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="content">
+            <!-- Вопрос 1 -->
+            <div class="question-container active" data-question="1">
+                <div class="question-number">Вопрос 1 из 8</div>
+                <div class="question-text">Что является главным посылом книги "Принцип Оз"?</div>
+                <div class="options">
+                    <div class="option" data-answer="wrong">
+                        Успех зависит от внешних обстоятельств и удачи
+                    </div>
+                    <div class="option" data-answer="correct">
+                        Результаты достигаются через личную ответственность, а не поиск виноватых
+                    </div>
+                    <div class="option" data-answer="wrong">
+                        Нужно ждать, пока руководство решит все проблемы
+                    </div>
+                    <div class="option" data-answer="wrong">
+                        Важнее соблюдать процедуры, чем достигать результатов
+                    </div>
+                </div>
+                <div class="feedback"></div>
+                <div class="warning" id="warning1">⚠️ Пожалуйста, выберите ответ перед продолжением</div>
+                <div class="button-container">
+                    <button class="next-button" onclick="nextQuestion(1)">Далее →</button>
+                </div>
+            </div>
+
+            <!-- Вопрос 2 -->
+            <div class="question-container" data-question="2">
+                <div class="question-number">Вопрос 2 из 8</div>
+                <div class="question-text">Что означает концепция "Над чертой" в книге?</div>
+                <div class="options">
+                    <div class="option" data-answer="wrong">
+                        Работа на руководящей должности
+                    </div>
+                    <div class="option" data-answer="correct">
+                        Принятие ответственности и активные действия для достижения результата
+                    </div>
+                    <div class="option" data-answer="wrong">
+                        Превышение плановых показателей
+                    </div>
+                    <div class="option" data-answer="wrong">
+                        Строгое следование правилам компании
+                    </div>
+                </div>
+                <div class="feedback"></div>
+                <div class="warning" id="warning2">⚠️ Пожалуйста, выберите ответ перед продолжением</div>
+                <div class="button-container">
+                    <button class="next-button" onclick="nextQuestion(2)">Далее →</button>
+                </div>
+            </div>
+
+            <!-- Вопрос 3 -->
+            <div class="question-container" data-question="3">
+                <div class="question-number">Вопрос 3 из 8</div>
+                <div class="question-text">Что является характеристикой позиции "Под чертой"?</div>
+                <div class="options">
+                    <div class="option" data-answer="wrong">
+                        Активный поиск решений проблем
+                    </div>
+                    <div class="option" data-answer="wrong">
+                        Принятие на себя ответственности за результаты
+                    </div>
+                    <div class="option" data-answer="correct">
+                        Поиск оправданий, обвинение обстоятельств и других людей
+                    </div>
+                    <div class="option" data-answer="wrong">
+                        Стремление к постоянному улучшению
+                    </div>
+                </div>
+                <div class="feedback"></div>
+                <div class="warning" id="warning3">⚠️ Пожалуйста, выберите ответ перед продолжением</div>
+                <div class="button-container">
+                    <button class="next-button" onclick="nextQuestion(3)">Далее →</button>
+                </div>
+            </div>
+
+            <!-- Вопрос 4 -->
+            <div class="question-container" data-question="4">
+                <div class="question-number">Вопрос 4 из 8</div>
+                <div class="question-text">Какую метафору авторы используют для иллюстрации пути к ответственности?</div>
+                <div class="options">
+                    <div class="option" data-answer="wrong">
+                        Путешествие Одиссея
+                    </div>
+                    <div class="option" data-answer="correct">
+                        Путешествие Дороти по дороге из желтого кирпича в "Волшебнике страны Оз"
+                    </div>
+                    <div class="option" data-answer="wrong">
+                        Восхождение на Эверест
+                    </div>
+                    <div class="option" data-answer="wrong">
+                        Марафонский бег
+                    </div>
+                </div>
+                <div class="feedback"></div>
+                <div class="warning" id="warning4">⚠️ Пожалуйста, выберите ответ перед продолжением</div>
+                <div class="button-container">
+                    <button class="next-button" onclick="nextQuestion(4)">Далее →</button>
+                </div>
+            </div>
+
+            <!-- Вопрос 5 -->
+            <div class="question-container" data-question="5">
+                <div class="question-number">Вопрос 5 из 8</div>
+                <div class="question-text">Согласно книге, что происходит, когда люди застревают в "Порочном круге жертвы"?</div>
+                <div class="options">
+                    <div class="option" data-answer="wrong">
+                        Они быстрее достигают целей
+                    </div>
+                    <div class="option" data-answer="correct">
+                        Они застревают в бездействии, оправданиях и обвинениях, что мешает достижению результатов
+                    </div>
+                    <div class="option" data-answer="wrong">
+                        Они получают больше поддержки от коллег
+                    </div>
+                    <div class="option" data-answer="wrong">
+                        Они лучше понимают свои слабые стороны
+                    </div>
+                </div>
+                <div class="feedback"></div>
+                <div class="warning" id="warning5">⚠️ Пожалуйста, выберите ответ перед продолжением</div>
+                <div class="button-container">
+                    <button class="next-button" onclick="nextQuestion(5)">Далее →</button>
+                </div>
+            </div>
+
+            <!-- Вопрос 6 -->
+            <div class="question-container" data-question="6">
+                <div class="question-number">Вопрос 6 из 8</div>
+                <div class="question-text">Что является первым шагом на "Ступенях к ответственности"?</div>
+                <div class="options">
+                    <div class="option" data-answer="wrong">
+                        Решить проблему любой ценой
+                    </div>
+                    <div class="option" data-answer="correct">
+                        Увидеть ситуацию — признать реальность и свою роль в ней
+                    </div>
+                    <div class="option" data-answer="wrong">
+                        Делегировать задачу другим
+                    </div>
+                    <div class="option" data-answer="wrong">
+                        Ждать указаний руководства
+                    </div>
+                </div>
+                <div class="feedback"></div>
+                <div class="warning" id="warning6">⚠️ Пожалуйста, выберите ответ перед продолжением</div>
+                <div class="button-container">
+                    <button class="next-button" onclick="nextQuestion(6)">Далее →</button>
+                </div>
+            </div>
+
+            <!-- Вопрос 7 -->
+            <div class="question-container" data-question="7">
+                <div class="question-number">Вопрос 7 из 8</div>
+                <div class="question-text">Почему многие компании терпят неудачу, согласно книге?</div>
+                <div class="options">
+                    <div class="option" data-answer="wrong">
+                        Из-за недостатка финансирования
+                    </div>
+                    <div class="option" data-answer="correct">
+                        Из-за нежелания руководства признавать ошибки и принимать ответственность
+                    </div>
+                    <div class="option" data-answer="wrong">
+                        Из-за слишком высокой конкуренции
+                    </div>
+                    <div class="option" data-answer="wrong">
+                        Из-за устаревших технологий
+                    </div>
+                </div>
+                <div class="feedback"></div>
+                <div class="warning" id="warning7">⚠️ Пожалуйста, выберите ответ перед продолжением</div>
+                <div class="button-container">
+                    <button class="next-button" onclick="nextQuestion(7)">Далее →</button>
+                </div>
+            </div>
+
+            <!-- Вопрос 8 -->
+            <div class="question-container" data-question="8">
+                <div class="question-number">Вопрос 8 из 8</div>
+                <div class="question-text">Какой главный урок Дороти усвоила в конце своего путешествия по стране Оз?</div>
+                <div class="options">
+                    <div class="option" data-answer="wrong">
+                        Что волшебство решает все проблемы
+                    </div>
+                    <div class="option" data-answer="correct">
+                        Что она всегда обладала силой достичь своей цели, нужно было лишь принять ответственность
+                    </div>
+                    <div class="option" data-answer="wrong">
+                        Что нужно полагаться на других в решении своих проблем
+                    </div>
+                    <div class="option" data-answer="wrong">
+                        Что важно следовать указаниям волшебника
+                    </div>
+                </div>
+                <div class="feedback"></div>
+                <div class="warning" id="warning8">⚠️ Пожалуйста, выберите ответ перед продолжением</div>
+                <div class="button-container">
+                    <button class="next-button" onclick="showResults()">Показать результаты</button>
+                </div>
+            </div>
+
+            <!-- Результаты -->
+            <div class="results" id="results">
+                <h2>🎉 Тест завершен!</h2>
+                <div class="score" id="score">0/8</div>
+                <div class="score-message" id="scoreMessage"></div>
+                <button class="restart-button" onclick="restartQuiz()">Пройти снова</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentQuestion = 1;
+        let score = 0;
+        const totalQuestions = 8;
+        let answeredQuestions = new Set();
+
+        const correctFeedback = {
+            1: "Совершенно верно! 🎯 Суть книги в том, что результаты приходят, когда мы берем на себя ответственность, а не ищем виноватых или оправдания.",
+            2: "Отлично! ✨ «Над чертой» — это активная позиция ответственности, когда человек действует для достижения результата, а не пассивно ждет или обвиняет других.",
+            3: "Правильно! 👍 «Под чертой» — это позиция жертвы: оправдания, обвинения обстоятельств и других людей, что блокирует путь к результату.",
+            4: "Молодец! 🌟 Авторы используют метафору из «Волшебника страны Оз», где Дороти проходит путь от ощущения себя жертвой к пониманию собственной силы и ответственности.",
+            5: "Верно! 💪 Порочный круг жертвы — это ловушка бездействия, где человек застревает в оправданиях вместо того, чтобы двигаться к цели.",
+            6: "Точно! 👁️ Первый шаг к ответственности — увидеть ситуацию такой, какая она есть, и признать свою роль в ней, а не отрицать реальность.",
+            7: "Правильно! 📊 Авторы подчеркивают, что главная причина неудач компаний — неготовность руководства признавать ошибки и брать на себя ответственность за них.",
+            8: "Превосходно! 🏆 Главный урок истории: у нас уже есть все необходимое для достижения целей — нужно лишь взять на себя ответственность и действовать."
+        };
+
+        const incorrectFeedback = {
+            1: "Не совсем так. ❌ Книга учит, что результаты зависят не от внешних обстоятельств, а от нашей готовности брать на себя ответственность. Когда мы перестаем искать виноватых и начинаем действовать — результаты не заставляют себя ждать!",
+            2: "Нет, это не то. ❌ «Над чертой» — это не про должность или показатели. Это про внутреннюю позицию: брать ответственность, видеть реальность и активно действовать для достижения результата, независимо от обстоятельств.",
+            3: "Неправильно. ❌ Это как раз характеристики позиции «Над чертой». А «Под чертой» — это когда мы ищем оправдания, обвиняем других и обстоятельства, вместо того чтобы брать ответственность.",
+            4: "Нет. ❌ Авторы используют метафору путешествия Дороти из «Волшебника страны Оз» по дороге из желтого кирпича — это символ пути от позиции жертвы к ответственности и осознанию собственной силы.",
+            5: "Не верно. ❌ Порочный круг жертвы — это когда человек застревает в оправданиях, обвинениях и бездействии. Это блокирует прогресс и мешает достигать результатов, а не помогает!",
+            6: "Неправильно. ❌ Первый шаг — «Увидеть ситуацию»: признать реальность такой, какая она есть, и увидеть свою роль в происходящем. Без этого шага невозможно двигаться к решению.",
+            7: "Нет. ❌ Авторы утверждают, что главная причина неудач — нежелание руководства признавать свои управленческие ошибки и принимать за них ответственность. Вместо этого они ищут оправдания во внешних факторах.",
+            8: "Неверно. ❌ Урок в том, что Дороти всегда имела силу вернуться домой (могла щелкнуть каблучками), но ей нужно было пройти путь, чтобы осознать: только она сама может исполнить свои желания, приняв ответственность."
+        };
+
+        function selectOption(element, questionNum) {
+            if (answeredQuestions.has(questionNum)) {
+                return; // Уже ответили на этот вопрос
+            }
+
+            const options = element.parentElement.querySelectorAll('.option');
+            options.forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            element.classList.add('selected');
+
+            // Скрыть предупреждение если было
+            document.getElementById('warning' + questionNum).classList.remove('show');
+        }
+
+        function checkAnswer(element, questionNum) {
+            if (answeredQuestions.has(questionNum)) {
+                return; // Уже ответили на этот вопрос
+            }
+
+            const isCorrect = element.dataset.answer === 'correct';
+            const container = element.closest('.question-container');
+            const feedback = container.querySelector('.feedback');
+            const nextButton = container.querySelector('.next-button');
+            const options = container.querySelectorAll('.option');
+
+            // Отмечаем как отвеченный
+            answeredQuestions.add(questionNum);
+
+            // Блокируем все опции
+            options.forEach(opt => {
+                opt.classList.add('disabled');
+                if (opt.dataset.answer === 'correct') {
+                    opt.classList.add('correct');
+                    opt.innerHTML += '<span class="option-icon">✓</span>';
+                }
+            });
+
+            // Показываем результат выбора
+            if (isCorrect) {
+                element.classList.add('correct');
+                feedback.className = 'feedback correct show';
+                feedback.innerHTML = `
+                    <div class="feedback-title">Правильно!</div>
+                    <div class="feedback-text">${correctFeedback[questionNum]}</div>
+                `;
+                score++;
+            } else {
+                element.classList.add('incorrect');
+                element.innerHTML += '<span class="option-icon">✗</span>';
+                feedback.className = 'feedback incorrect show';
+                feedback.innerHTML = `
+                    <div class="feedback-title">Неправильно</div>
+                    <div class="feedback-text">${incorrectFeedback[questionNum]}</div>
+                `;
+            }
+
+            // Показываем кнопку "Далее"
+            nextButton.classList.add('show');
+            
+            // Обновляем прогресс-бар
+            updateProgress();
+        }
+
+        function nextQuestion(currentQ) {
+            const container = document.querySelector(`[data-question="${currentQ}"]`);
+            const selectedOption = container.querySelector('.option.selected');
+            
+            // Проверяем, выбран ли ответ
+            if (!selectedOption) {
+                document.getElementById('warning' + currentQ).classList.add('show');
+                return;
+            }
+
+            // Если ответ выбран, но еще не проверен, проверяем его
+            if (!answeredQuestions.has(currentQ)) {
+                checkAnswer(selectedOption, currentQ);
+                return;
+            }
+
+            // Переход к следующему вопросу
+            container.classList.remove('active');
+            const nextContainer = document.querySelector(`[data-question="${currentQ + 1}"]`);
+            if (nextContainer) {
+                nextContainer.classList.add('active');
+                currentQuestion = currentQ + 1;
+            }
+        }
+
+        function showResults() {
+            const container = document.querySelector(`[data-question="${currentQuestion}"]`);
+            const selectedOption = container.querySelector('.option.selected');
+            
+            // Проверяем, выбран ли ответ
+            if (!selectedOption) {
+                document.getElementById('warning' + currentQuestion).classList.add('show');
+                return;
+            }
+
+            // Если ответ выбран, но еще не проверен, проверяем его
+            if (!answeredQuestions.has(currentQuestion)) {
+                checkAnswer(selectedOption, currentQuestion);
+                return;
+            }
+
+            // Показываем результаты
+            container.classList.remove('active');
+            const results = document.getElementById('results');
+            const scoreElement = document.getElementById('score');
+            const messageElement = document.getElementById('scoreMessage');
+
+            scoreElement.textContent = `${score}/${totalQuestions}`;
+            
+            let message = '';
+            const percentage = (score / totalQuestions) * 100;
+            
+            if (percentage === 100) {
+                message = '🏆 Превосходно! Вы отлично усвоили основные концепции книги "Принцип Оз". Вы понимаете суть ответственности и готовы применять эти знания на практике!';
+            } else if (percentage >= 75) {
+                message = '🌟 Отлично! Вы хорошо понимаете основные идеи книги. Продолжайте развивать культуру ответственности!';
+            } else if (percentage >= 50) {
+                message = '👍 Неплохо! У вас есть базовое понимание концепций. Рекомендуем перечитать книгу, чтобы глубже понять принципы ответственности.';
+            } else {
+                message = '📚 Стоит поработать над материалом. Перечитайте книгу внимательнее, чтобы лучше понять путь от позиции жертвы к ответственности!';
+            }
+            
+            messageElement.textContent = message;
+            results.classList.add('show');
+            updateProgress();
+        }
+
+        function restartQuiz() {
+            score = 0;
+            currentQuestion = 1;
+            answeredQuestions.clear();
+            
+            // Сброс всех вопросов
+            document.querySelectorAll('.question-container').forEach(container => {
+                container.classList.remove('active');
+                const options = container.querySelectorAll('.option');
+                options.forEach(opt => {
+                    opt.className = 'option';
+                    opt.innerHTML = opt.innerHTML.replace(/<span class="option-icon">.*<\/span>/g, '');
+                });
+                container.querySelector('.feedback').className = 'feedback';
+                container.querySelector('.feedback').innerHTML = '';
+                container.querySelector('.next-button').classList.remove('show');
+                container.querySelector('.warning').classList.remove('show');
+            });
+            
+            // Показать первый вопрос
+            document.querySelector('[data-question="1"]').classList.add('active');
+            
+            // Скрыть результаты
+            document.getElementById('results').classList.remove('show');
+            
+            // Сброс прогресс-бара
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const progress = (answeredQuestions.size / totalQuestions) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+        }
+
+        // Добавляем обработчики клика на опции
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.option').forEach(option => {
+                option.addEventListener('click', function() {
+                    const container = this.closest('.question-container');
+                    const questionNum = parseInt(container.dataset.question);
+                    
+                    if (!answeredQuestions.has(questionNum)) {
+                        selectOption(this, questionNum);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
